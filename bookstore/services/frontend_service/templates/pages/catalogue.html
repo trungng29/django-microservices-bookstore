@@ -1,0 +1,441 @@
+{% extends 'base.html' %}
+{% block title %}Catalogue — BookVerse{% endblock %}
+
+{% block extra_css %}
+<style>
+.catalogue-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 2rem;
+  max-width: 1280px;
+  margin: 2rem auto;
+  padding: 0 2rem;
+}
+
+/* ── SIDEBAR ─────────────────────────────── */
+.sidebar {
+  position: sticky;
+  top: 5.5rem;
+  align-self: start;
+}
+.sidebar-card {
+  background: #fff;
+  border-radius: 1rem;
+  padding: 1.4rem;
+  box-shadow: 0 2px 12px var(--shadow);
+  margin-bottom: 1rem;
+}
+.sidebar-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem; font-weight: 700;
+  margin-bottom: 1rem;
+  display: flex; align-items: center; gap: .4rem;
+}
+.filter-group { margin-bottom: .6rem; }
+.filter-label {
+  font-size: .75rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .06em;
+  color: #888; margin-bottom: .4rem; display: block;
+}
+.filter-group input[type=text],
+.filter-group select {
+  width: 100%; padding: .55rem .8rem;
+  border: 1.5px solid var(--mist); border-radius: .5rem;
+  font-family: 'DM Sans', sans-serif; font-size: .86rem;
+  color: var(--ink); background: var(--paper); outline: none;
+  transition: border-color .2s;
+}
+.filter-group input:focus,
+.filter-group select:focus { border-color: var(--gold); }
+
+.cat-list { list-style: none; }
+.cat-list li a {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .45rem .6rem; border-radius: .4rem;
+  font-size: .86rem; color: var(--ink); text-decoration: none;
+  transition: background .15s;
+}
+.cat-list li a:hover,
+.cat-list li a.active { background: var(--cream); color: var(--gold); font-weight: 600; }
+.cat-icon { font-size: .9rem; margin-right: .4rem; }
+
+.apply-btn {
+  width: 100%; padding: .7rem;
+  background: var(--gold); color: #fff;
+  border: none; border-radius: .6rem;
+  font-family: 'DM Sans', sans-serif; font-size: .9rem; font-weight: 600;
+  cursor: pointer; transition: background .2s;
+}
+.apply-btn:hover { background: #b8872a; }
+.clear-link {
+  display: block; text-align: center;
+  font-size: .78rem; color: #aaa; margin-top: .5rem;
+  text-decoration: none;
+}
+.clear-link:hover { color: var(--rust); }
+
+/* ── MAIN CONTENT ───────────────────────── */
+.catalogue-main {}
+
+.catalogue-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.4rem; flex-wrap: wrap; gap: .8rem;
+}
+.catalogue-header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem; font-weight: 700;
+}
+.catalogue-meta { font-size: .85rem; color: #888; }
+
+.sort-bar { display: flex; align-items: center; gap: .8rem; }
+.sort-bar label { font-size: .82rem; color: #888; white-space: nowrap; }
+.sort-bar select {
+  padding: .45rem .8rem; border: 1.5px solid var(--mist);
+  border-radius: .5rem; font-size: .84rem; font-family: 'DM Sans', sans-serif;
+  outline: none; background: #fff; cursor: pointer;
+}
+
+/* ── BOOK GRID ──────────────────────────── */
+.books-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 1.4rem;
+  margin-bottom: 2.5rem;
+}
+
+.book-card {
+  background: #fff; border-radius: 1rem;
+  box-shadow: 0 2px 10px var(--shadow);
+  transition: transform .25s cubic-bezier(.22,1,.36,1), box-shadow .25s;
+  cursor: pointer; overflow: hidden;
+  display: flex; flex-direction: column;
+  animation: fadeUp .45s cubic-bezier(.22,1,.36,1) both;
+}
+.book-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 14px 36px rgba(0,0,0,.13);
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+
+.book-cover {
+  height: 210px; position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 3rem;
+}
+.book-cover img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform .4s;
+}
+.book-card:hover .book-cover img { transform: scale(1.04); }
+.book-cover-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 3.5rem;
+}
+
+.badge-row {
+  position: absolute; top: .5rem; left: .5rem;
+  display: flex; gap: .3rem;
+}
+.badge {
+  font-size: .65rem; font-weight: 700; letter-spacing: .04em;
+  padding: .2rem .5rem; border-radius: 2rem;
+}
+.badge-gold    { background: var(--gold);  color: #fff; }
+.badge-rust    { background: var(--rust);  color: #fff; }
+.badge-sage    { background: var(--sage);  color: #fff; }
+
+.book-body { padding: .9rem 1rem 1.1rem; flex: 1; display: flex; flex-direction: column; }
+.book-category {
+  font-size: .7rem; font-weight: 600; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--gold); margin-bottom: .25rem;
+}
+.book-title {
+  font-family: 'Playfair Display', serif;
+  font-size: .95rem; font-weight: 700; line-height: 1.3;
+  margin-bottom: .2rem;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.book-authors { font-size: .75rem; color: #888; margin-bottom: .5rem; }
+.book-rating { font-size: .8rem; color: var(--gold); margin-bottom: auto; }
+.book-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: .8rem;
+}
+.book-price { font-size: 1rem; font-weight: 700; }
+.book-price-old { font-size: .75rem; color: #bbb; text-decoration: line-through; margin-left: .3rem; }
+.book-discount {
+  font-size: .7rem; font-weight: 700; color: #fff;
+  background: var(--rust); padding: .15rem .4rem; border-radius: .3rem;
+}
+.add-cart-btn {
+  background: var(--gold); color: #fff;
+  border: none; border-radius: .5rem;
+  font-size: .78rem; font-weight: 600; padding: .4rem .8rem;
+  cursor: pointer; transition: background .2s; white-space: nowrap;
+}
+.add-cart-btn:hover { background: #b8872a; }
+
+/* ── EMPTY STATE ───────────────────────── */
+.empty-state {
+  text-align: center; padding: 4rem 2rem; color: #aaa;
+}
+.empty-state .icon { font-size: 3.5rem; margin-bottom: 1rem; }
+.empty-state h3 { font-family:'Playfair Display',serif; font-size:1.4rem; color:var(--ink); margin-bottom:.5rem; }
+
+/* ── PAGINATION ─────────────────────────── */
+.pagination {
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+}
+.page-btn {
+  padding: .5rem .9rem; border-radius: .5rem; border: 1.5px solid var(--mist);
+  background: #fff; font-size: .86rem; font-family:'DM Sans',sans-serif;
+  cursor: pointer; text-decoration: none; color: var(--ink);
+  transition: background .15s, border-color .15s;
+}
+.page-btn:hover  { background: var(--cream); }
+.page-btn.active { background: var(--gold); color: #fff; border-color: var(--gold); }
+.page-btn:disabled,.page-btn.disabled { opacity:.4; cursor:default; }
+
+/* ── ACTIVE FILTERS ─────────────────────── */
+.active-filters { display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:1rem; }
+.filter-tag {
+  display:inline-flex; align-items:center; gap:.3rem;
+  background:var(--cream); border:1px solid var(--mist);
+  border-radius:2rem; padding:.25rem .7rem;
+  font-size:.78rem; font-weight:500;
+}
+.filter-tag a { color:#aaa; text-decoration:none; font-size:.9rem; }
+.filter-tag a:hover { color:var(--rust); }
+
+@media (max-width: 800px) {
+  .catalogue-layout { grid-template-columns: 1fr; }
+  .sidebar { position: static; }
+  .books-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="catalogue-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <form method="GET" action="/catalogue/" id="filter-form">
+
+      <!-- Search -->
+      <div class="sidebar-card">
+        <div class="sidebar-title">🔍 Tìm kiếm</div>
+        <div class="filter-group">
+          <input type="text" name="q" value="{{ filters.q|default:'' }}"
+                 placeholder="Tên sách, tác giả, ISBN...">
+        </div>
+      </div>
+
+      <!-- Categories -->
+      <div class="sidebar-card">
+        <div class="sidebar-title">📂 Danh mục</div>
+        <ul class="cat-list">
+          <li>
+            <a href="/catalogue/" class="{% if not filters.category %}active{% endif %}">
+              📚 Tất cả sách
+            </a>
+          </li>
+          {% for cat in categories %}
+          <li>
+            <a href="/catalogue/?category={{ cat.slug }}"
+               class="{% if filters.category == cat.slug %}active{% endif %}">
+              <span><span class="cat-icon">{{ cat.icon|default:"📖" }}</span>{{ cat.name }}</span>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <!-- Filters -->
+      <div class="sidebar-card">
+        <div class="sidebar-title">⚙️ Bộ lọc</div>
+
+        <div class="filter-group">
+          <label class="filter-label">Tác giả</label>
+          <select name="author">
+            <option value="">Tất cả tác giả</option>
+            {% for a in authors %}
+            <option value="{{ a.slug }}" {% if filters.author == a.slug %}selected{% endif %}>
+              {{ a.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Ngôn ngữ</label>
+          <select name="language">
+            <option value="">Tất cả</option>
+            <option value="vi" {% if filters.language == 'vi' %}selected{% endif %}>🇻🇳 Tiếng Việt</option>
+            <option value="en" {% if filters.language == 'en' %}selected{% endif %}>🇺🇸 English</option>
+            <option value="ja" {% if filters.language == 'ja' %}selected{% endif %}>🇯🇵 日本語</option>
+            <option value="zh" {% if filters.language == 'zh' %}selected{% endif %}>🇨🇳 中文</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Định dạng</label>
+          <select name="format">
+            <option value="">Tất cả</option>
+            <option value="paperback"  {% if filters.format == 'paperback' %}selected{% endif %}>📕 Bìa mềm</option>
+            <option value="hardcover"  {% if filters.format == 'hardcover' %}selected{% endif %}>📘 Bìa cứng</option>
+            <option value="ebook"      {% if filters.format == 'ebook' %}selected{% endif %}>💻 E-Book</option>
+            <option value="audiobook"  {% if filters.format == 'audiobook' %}selected{% endif %}>🎧 Audiobook</option>
+          </select>
+        </div>
+
+        <div class="filter-group" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+          <div>
+            <label class="filter-label">Nổi bật</label>
+            <select name="featured">
+              <option value="">Tất cả</option>
+              <option value="1" {% if filters.featured == '1' %}selected{% endif %}>✨ Có</option>
+            </select>
+          </div>
+          <div>
+            <label class="filter-label">Bestseller</label>
+            <select name="bestseller">
+              <option value="">Tất cả</option>
+              <option value="1" {% if filters.bestseller == '1' %}selected{% endif %}>🔥 Có</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="apply-btn">Áp dụng bộ lọc</button>
+        <a href="/catalogue/" class="clear-link">✕ Xoá bộ lọc</a>
+      </div>
+
+      <!-- Seller CTA -->
+      {% if user and user.primary_role == 'seller' or user.primary_role == 'admin' %}
+      <div class="sidebar-card" style="background:linear-gradient(135deg,var(--ink),#2d2d3e);color:#fff">
+        <div style="font-family:'Playfair Display',serif;font-size:.95rem;font-weight:700;margin-bottom:.5rem">
+          📤 Đăng sách mới
+        </div>
+        <p style="font-size:.8rem;opacity:.7;margin-bottom:1rem">Thêm sách vào cửa hàng của bạn</p>
+        <a href="/seller/upload/" class="apply-btn" style="display:block;text-align:center;text-decoration:none">
+          + Tải sách lên
+        </a>
+      </div>
+      {% endif %}
+
+    </form>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="catalogue-main">
+
+    <div class="catalogue-header">
+      <div>
+        <h1>
+          {% if filters.q %}Kết quả cho "{{ filters.q }}"
+          {% elif filters.category %}{{ filters.category|capfirst }}
+          {% else %}Tất cả sách{% endif %}
+        </h1>
+        <div class="catalogue-meta">{{ pagination.count }} đầu sách</div>
+      </div>
+      <form method="GET" action="/catalogue/" class="sort-bar" id="sort-form">
+        {% for k,v in filters.items %}{% if k != 'ordering' %}
+        <input type="hidden" name="{{ k }}" value="{{ v }}">
+        {% endif %}{% endfor %}
+        <label>Sắp xếp:</label>
+        <select name="ordering" onchange="document.getElementById('sort-form').submit()">
+          <option value="-created_at"   {% if filters.ordering == '-created_at' %}selected{% endif %}>Mới nhất</option>
+          <option value="-avg_rating"   {% if filters.ordering == '-avg_rating' %}selected{% endif %}>Đánh giá cao</option>
+          <option value="-total_sold"   {% if filters.ordering == '-total_sold' %}selected{% endif %}>Bán chạy</option>
+          <option value="avg_rating"    {% if filters.ordering == 'avg_rating' %}selected{% endif %}>Đánh giá thấp</option>
+        </select>
+      </form>
+    </div>
+
+    <!-- Active filter tags -->
+    {% if filters.q or filters.category or filters.author or filters.language or filters.format %}
+    <div class="active-filters">
+      {% if filters.q %}<span class="filter-tag">🔍 {{ filters.q }} <a href="?{% for k,v in filters.items %}{% if k != 'q' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">✕</a></span>{% endif %}
+      {% if filters.category %}<span class="filter-tag">📂 {{ filters.category }} <a href="?{% for k,v in filters.items %}{% if k != 'category' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">✕</a></span>{% endif %}
+      {% if filters.language %}<span class="filter-tag">🌐 {{ filters.language }} <a href="?{% for k,v in filters.items %}{% if k != 'language' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">✕</a></span>{% endif %}
+      {% if filters.format %}<span class="filter-tag">📕 {{ filters.format }} <a href="?{% for k,v in filters.items %}{% if k != 'format' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">✕</a></span>{% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Book Grid -->
+    {% if books %}
+    <div class="books-grid">
+      {% for book in books %}
+      <a href="/books/{{ book.slug }}/" class="book-card" style="color:inherit;text-decoration:none;animation-delay:{{ forloop.counter0|add:0 }}s">
+        <div class="book-cover">
+          {% if book.cover_image %}
+            <img src="{{ book.cover_image }}" alt="{{ book.title }}" loading="lazy">
+          {% else %}
+            <div class="book-cover-placeholder" style="background:linear-gradient(135deg,
+              {% cycle '#c8973a,#e8c56a' '#4a6b5b,#6a9b80' '#b84c2b,#d46e4a' '#5a4a8b,#8a70b8' '#2d6a9f,#4a9fd4' %});">📖</div>
+          {% endif %}
+          <div class="badge-row">
+            {% if book.is_featured    %}<span class="badge badge-gold">✨ Nổi bật</span>{% endif %}
+            {% if book.is_bestseller  %}<span class="badge badge-rust">🔥 Bestseller</span>{% endif %}
+            {% if not book.in_stock   %}<span class="badge" style="background:#888;color:#fff">Hết hàng</span>{% endif %}
+          </div>
+        </div>
+        <div class="book-body">
+          {% if book.primary_category %}
+          <div class="book-category">{{ book.primary_category.name }}</div>
+          {% endif %}
+          <div class="book-title">{{ book.title }}</div>
+          <div class="book-authors">
+            {% for a in book.authors %}{{ a.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+          </div>
+          {% if book.avg_rating %}
+          <div class="book-rating">
+            {% with r=book.avg_rating|floatformat:1 %}
+            ★★★★★ {{ r }} ({{ book.total_reviews }})
+            {% endwith %}
+          </div>
+          {% endif %}
+          <div class="book-footer">
+            <div>
+              {% if book.current_price %}
+              <span class="book-price">{{ book.current_price.sale }}₫</span>
+              {% if book.current_price.discount > 0 %}
+              <span class="book-price-old">{{ book.current_price.original }}₫</span>
+              {% endif %}
+              {% else %}<span class="book-price" style="color:#aaa">Liên hệ</span>{% endif %}
+            </div>
+            {% if book.current_price and book.current_price.discount > 0 %}
+            <span class="book-discount">-{{ book.current_price.discount }}%</span>
+            {% endif %}
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.count > 20 %}
+    <div class="pagination">
+      {% if pagination.previous %}
+      <a href="?{% for k,v in filters.items %}&{{ k }}={{ v }}{% endfor %}&page={{ pagination.page|add:-1 }}" class="page-btn">← Trước</a>
+      {% endif %}
+      <span class="page-btn active">Trang {{ pagination.page }}</span>
+      {% if pagination.next %}
+      <a href="?{% for k,v in filters.items %}&{{ k }}={{ v }}{% endfor %}&page={{ pagination.page|add:1 }}" class="page-btn">Sau →</a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+      <div class="icon">📭</div>
+      <h3>Không tìm thấy sách nào</h3>
+      <p>Thử thay đổi bộ lọc hoặc từ khoá tìm kiếm.</p>
+      <a href="/catalogue/" class="btn btn-gold" style="margin-top:1.2rem;display:inline-block">Xem tất cả sách</a>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

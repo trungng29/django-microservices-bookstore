@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}403 — Không có quyền{% endblock %}
+{% block content %}
+<div style="text-align:center;padding:6rem 2rem">
+  <div style="font-size:4rem;margin-bottom:1rem">🔒</div>
+  <h1 style="font-family:'Playfair Display',serif;font-size:2rem;margin-bottom:.5rem">Không có quyền truy cập</h1>
+  <p style="color:#888;margin-bottom:2rem">Bạn cần có role Seller hoặc Admin để thực hiện thao tác này.</p>
+  <a href="/" class="btn btn-gold">Về trang chủ</a>
+</div>
+{% endblock %}

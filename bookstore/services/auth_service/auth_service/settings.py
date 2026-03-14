@@ -6,7 +6,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY    = os.environ.get('SECRET_KEY', 'dev-secret-key-2024')
 DEBUG         = os.environ.get('DEBUG', 'True') == 'True'
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,auth_service,nginx,0.0.0.0').split(',')
+
+# Dùng * để tránh mọi vấn đề host validation trong dev/docker
+ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -55,7 +57,7 @@ WSGI_APPLICATION = 'auth_service.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE':   'django.db.backends.postgresql',
         'NAME':     os.environ.get('DB_NAME',     'auth_db'),
         'USER':     os.environ.get('DB_USER',     'auth_user'),
         'PASSWORD': os.environ.get('DB_PASSWORD', 'auth_pass_2024'),
@@ -117,19 +119,19 @@ REST_FRAMEWORK = {
 
 # ── JWT ───────────────────────────────────────────────────────
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME':  timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS':  True,
+    'ACCESS_TOKEN_LIFETIME':    timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME':   timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS':    True,
     'BLACKLIST_AFTER_ROTATION': True,
-    'UPDATE_LAST_LOGIN':      True,
-    'ALGORITHM':              'HS256',
-    'SIGNING_KEY':            SECRET_KEY,
-    'AUTH_HEADER_TYPES':      ('Bearer',),
-    'USER_ID_FIELD':          'id',
-    'USER_ID_CLAIM':          'user_id',
-    'TOKEN_OBTAIN_SERIALIZER': 'accounts.serializers.CustomTokenObtainPairSerializer',
+    'UPDATE_LAST_LOGIN':        True,
+    'ALGORITHM':                'HS256',
+    'SIGNING_KEY':              SECRET_KEY,
+    'AUTH_HEADER_TYPES':        ('Bearer',),
+    'USER_ID_FIELD':            'id',
+    'USER_ID_CLAIM':            'user_id',
+    'TOKEN_OBTAIN_SERIALIZER':  'accounts.serializers.CustomTokenObtainPairSerializer',
 }
 
 # ── CORS ──────────────────────────────────────────────────────
-CORS_ALLOW_ALL_ORIGINS = True   # Thoải mái trong dev; đổi thành whitelist khi deploy
-CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS  = True
+CORS_ALLOW_CREDENTIALS  = True

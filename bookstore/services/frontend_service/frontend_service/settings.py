@@ -70,3 +70,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Microservice URLs
 AUTH_SERVICE_URL = os.environ.get('AUTH_SERVICE_URL', 'http://localhost:8001')
+
+CATALOG_SERVICE_URL = os.environ.get('CATALOG_SERVICE_URL', 'http://catalog_service:8002')

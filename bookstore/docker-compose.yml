@@ -1,92 +1,246 @@
 version: '3.9'
 
+# ── Shared healthcheck template ───────────────────────────────
+x-pg-healthcheck: &pg-healthcheck
+  interval: 5s
+  timeout: 5s
+  retries: 15
+  start_period: 20s
+
 services:
+
+  # ════════════════════════════════════════════════════════════
+  # DATABASES
+  # ════════════════════════════════════════════════════════════
+
   auth_db:
     image: postgres:15-alpine
-    container_name: bookstore_auth_db
+    container_name: bv_auth_db
     environment:
       POSTGRES_DB: auth_db
       POSTGRES_USER: auth_user
       POSTGRES_PASSWORD: auth_pass_2024
     volumes:
       - auth_db_data:/var/lib/postgresql/data
-    networks:
-      - bookstore_network
+    networks: [bookstore_net]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U auth_user -d auth_db"]
-      interval: 3s
-      timeout: 5s
-      retries: 15
-      start_period: 20s
+      <<: *pg-healthcheck
+
+  catalog_db:
+    image: postgres:15-alpine
+    container_name: bv_catalog_db
+    environment:
+      POSTGRES_DB: catalog_db
+      POSTGRES_USER: catalog_user
+      POSTGRES_PASSWORD: catalog_pass_2024
+    volumes:
+      - catalog_db_data:/var/lib/postgresql/data
+    networks: [bookstore_net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U catalog_user -d catalog_db"]
+      <<: *pg-healthcheck
+
+  shop_db:
+    image: postgres:15-alpine
+    container_name: bv_shop_db
+    environment:
+      POSTGRES_DB: shop_db
+      POSTGRES_USER: shop_user
+      POSTGRES_PASSWORD: shop_pass_2024
+    volumes:
+      - shop_db_data:/var/lib/postgresql/data
+    networks: [bookstore_net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shop_user -d shop_db"]
+      <<: *pg-healthcheck
+
+  order_db:
+    image: postgres:15-alpine
+    container_name: bv_order_db
+    environment:
+      POSTGRES_DB: order_db
+      POSTGRES_USER: order_user
+      POSTGRES_PASSWORD: order_pass_2024
+    volumes:
+      - order_db_data:/var/lib/postgresql/data
+    networks: [bookstore_net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U order_user -d order_db"]
+      <<: *pg-healthcheck
+
+  interaction_db:
+    image: postgres:15-alpine
+    container_name: bv_interaction_db
+    environment:
+      POSTGRES_DB: interaction_db
+      POSTGRES_USER: interaction_user
+      POSTGRES_PASSWORD: interaction_pass_2024
+    volumes:
+      - interaction_db_data:/var/lib/postgresql/data
+    networks: [bookstore_net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U interaction_user -d interaction_db"]
+      <<: *pg-healthcheck
+
+  # ════════════════════════════════════════════════════════════
+  # REDIS (shared message broker / cache)
+  # ════════════════════════════════════════════════════════════
 
   redis:
     image: redis:7-alpine
-    container_name: bookstore_redis
-    networks:
-      - bookstore_network
+    container_name: bv_redis
+    networks: [bookstore_net]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 3s
       timeout: 3s
       retries: 10
 
+  # ════════════════════════════════════════════════════════════
+  # MICROSERVICES
+  # ════════════════════════════════════════════════════════════
+
   auth_service:
     build:
       context: ./services/auth_service
-      dockerfile: Dockerfile
-    container_name: bookstore_auth_service
+    container_name: bv_auth_service
     environment:
       DEBUG: "True"
-      SECRET_KEY: "super-secret-bookstore-key-2024"
+      SECRET_KEY: "auth-secret-2024"
       DB_NAME: auth_db
       DB_USER: auth_user
       DB_PASSWORD: auth_pass_2024
       DB_HOST: auth_db
       DB_PORT: "5432"
       REDIS_URL: "redis://redis:6379/0"
-      ALLOWED_HOSTS: "localhost,127.0.0.1,auth_service,nginx,0.0.0.0"
     depends_on:
-      auth_db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - bookstore_network
+      auth_db: {condition: service_healthy}
+      redis:   {condition: service_healthy}
+    networks: [bookstore_net]
+    restart: on-failure
+
+  catalog_service:
+    build:
+      context: ./services/catalog_service
+    container_name: bv_catalog_service
+    environment:
+      DEBUG: "True"
+      SECRET_KEY: "catalog-secret-2024"
+      DB_NAME: catalog_db
+      DB_USER: catalog_user
+      DB_PASSWORD: catalog_pass_2024
+      DB_HOST: catalog_db
+      DB_PORT: "5432"
+      AUTH_SERVICE_URL: "http://auth_service:8001"
+    depends_on:
+      catalog_db: {condition: service_healthy}
+    networks: [bookstore_net]
+    restart: on-failure
+
+  shop_service:
+    build:
+      context: ./services/shop_service
+    container_name: bv_shop_service
+    environment:
+      DEBUG: "True"
+      SECRET_KEY: "shop-secret-2024"
+      DB_NAME: shop_db
+      DB_USER: shop_user
+      DB_PASSWORD: shop_pass_2024
+      DB_HOST: shop_db
+      DB_PORT: "5432"
+      AUTH_SERVICE_URL: "http://auth_service:8001"
+    depends_on:
+      shop_db: {condition: service_healthy}
+    networks: [bookstore_net]
+    restart: on-failure
+
+  order_service:
+    build:
+      context: ./services/order_service
+    container_name: bv_order_service
+    environment:
+      DEBUG: "True"
+      SECRET_KEY: "order-secret-2024"
+      DB_NAME: order_db
+      DB_USER: order_user
+      DB_PASSWORD: order_pass_2024
+      DB_HOST: order_db
+      DB_PORT: "5432"
+      AUTH_SERVICE_URL: "http://auth_service:8001"
+      CATALOG_SERVICE_URL: "http://catalog_service:8002"
+    depends_on:
+      order_db: {condition: service_healthy}
+    networks: [bookstore_net]
+    restart: on-failure
+
+  interaction_service:
+    build:
+      context: ./services/interaction_service
+    container_name: bv_interaction_service
+    environment:
+      DEBUG: "True"
+      SECRET_KEY: "interaction-secret-2024"
+      DB_NAME: interaction_db
+      DB_USER: interaction_user
+      DB_PASSWORD: interaction_pass_2024
+      DB_HOST: interaction_db
+      DB_PORT: "5432"
+      AUTH_SERVICE_URL: "http://auth_service:8001"
+    depends_on:
+      interaction_db: {condition: service_healthy}
+    networks: [bookstore_net]
     restart: on-failure
 
   frontend_service:
     build:
       context: ./services/frontend_service
-      dockerfile: Dockerfile
-    container_name: bookstore_frontend_service
+    container_name: bv_frontend_service
     environment:
       DEBUG: "True"
-      SECRET_KEY: "frontend-secret-key-2024"
+      SECRET_KEY: "frontend-secret-2024"
       AUTH_SERVICE_URL: "http://auth_service:8001"
+      CATALOG_SERVICE_URL: "http://catalog_service:8002"
+      SHOP_SERVICE_URL: "http://shop_service:8003"
+      ORDER_SERVICE_URL: "http://order_service:8004"
+      INTERACTION_SERVICE_URL: "http://interaction_service:8005"
       ALLOWED_HOSTS: "localhost,127.0.0.1,frontend_service,nginx,0.0.0.0"
     depends_on:
       - auth_service
-    networks:
-      - bookstore_network
+      - catalog_service
+    networks: [bookstore_net]
     restart: on-failure
+
+  # ════════════════════════════════════════════════════════════
+  # NGINX REVERSE PROXY
+  # ════════════════════════════════════════════════════════════
 
   nginx:
     image: nginx:alpine
-    container_name: bookstore_nginx
+    container_name: bv_nginx
     ports:
       - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/proxy_params:/etc/nginx/proxy_params:ro
     depends_on:
       - auth_service
+      - catalog_service
+      - shop_service
+      - order_service
+      - interaction_service
       - frontend_service
-    networks:
-      - bookstore_network
+    networks: [bookstore_net]
     restart: unless-stopped
 
 networks:
-  bookstore_network:
+  bookstore_net:
     driver: bridge
 
 volumes:
   auth_db_data:
+  catalog_db_data:
+  shop_db_data:
+  order_db_data:
+  interaction_db_data:

@@ -122,8 +122,11 @@
   <a href="/" class="nav-logo">📖 Book<span>Verse</span></a>
   <div class="nav-links">
     <a href="/">Home</a>
-    <a href="#">Catalogue</a>
+    <a href="/catalogue/">Catalogue</a>
     <a href="#">Authors</a>
+    {% if request.session.user.primary_role == 'seller' or request.session.user.primary_role == 'admin' %}
+      <a href="/seller/upload/" class="btn" style="background:var(--sage);color:#fff;padding:.45rem 1rem;">+ Đăng sách</a>
+    {% endif %}
     {% if request.session.access_token %}
       <a href="/profile/">{{ request.session.user.username }}</a>
       <a href="/logout/" class="btn btn-outline" style="padding:.45rem 1rem;">Logout</a>
