@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% block title %}My Profile — BookVerse{% endblock %}
+
+{% block extra_css %}
+<style>
+  .profile-page {
+    max-width:900px; margin:3rem auto; padding:0 2rem;
+    animation:fadeUp .5s cubic-bezier(.22,1,.36,1) both;
+  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+
+  /* ── HEADER CARD ───────────────── */
+  .profile-header {
+    background:linear-gradient(135deg,var(--ink),#2d2d3e);
+    border-radius:1.5rem; padding:2.5rem 3rem;
+    display:flex; align-items:center; gap:2rem;
+    margin-bottom:2rem; position:relative; overflow:hidden;
+    color:#fff;
+  }
+  .profile-header::before {
+    content:''; position:absolute; right:-60px; top:-60px;
+    width:280px; height:280px; border-radius:50%;
+    background:radial-gradient(circle,rgba(200,151,58,.25),transparent 65%);
+  }
+  .avatar {
+    width:90px; height:90px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg,var(--gold),var(--rust));
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Playfair Display',serif; font-size:2.2rem; font-weight:900; color:#fff;
+    border:3px solid rgba(255,255,255,.2);
+    position:relative; z-index:1;
+  }
+  .profile-info { position:relative; z-index:1; }
+  .profile-info h1 {
+    font-family:'Playfair Display',serif; font-size:1.8rem; font-weight:700;
+    margin-bottom:.25rem;
+  }
+  .profile-info .email { color:#aaa; font-size:.9rem; margin-bottom:.8rem; }
+  .badge {
+    display:inline-flex; align-items:center; gap:.3rem;
+    padding:.25rem .7rem; border-radius:2rem; font-size:.75rem; font-weight:600;
+  }
+  .badge-gold    { background:rgba(200,151,58,.25); color:var(--gold-lt); }
+  .badge-green   { background:rgba(74,107,91,.3);   color:#6a9b80; }
+  .badge-grey    { background:rgba(255,255,255,.1);  color:#aaa; }
+
+  .profile-meta {
+    margin-left:auto; text-align:right; position:relative; z-index:1;
+    font-size:.82rem; color:#aaa; line-height:1.8;
+  }
+  .profile-meta strong { color:#fff; }
+
+  /* ── GRID ─────────────────────── */
+  .profile-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+
+  .card {
+    background:#fff; border-radius:1.2rem; padding:2rem;
+    box-shadow:0 2px 16px var(--shadow);
+  }
+  .card-title {
+    font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700;
+    margin-bottom:1.4rem; display:flex; align-items:center; gap:.5rem;
+  }
+
+  .field { margin-bottom:1rem; }
+  .field label {
+    display:block; font-size:.75rem; font-weight:600;
+    letter-spacing:.05em; text-transform:uppercase; color:#888; margin-bottom:.35rem;
+  }
+  .field input, .field textarea {
+    width:100%; padding:.7rem .9rem;
+    background:var(--paper); border:1.5px solid var(--mist);
+    border-radius:var(--r); font-family:'DM Sans',sans-serif;
+    font-size:.9rem; color:var(--ink); transition:border-color .2s, box-shadow .2s; outline:none;
+    resize:vertical;
+  }
+  .field input:focus, .field textarea:focus {
+    border-color:var(--gold); box-shadow:0 0 0 3px rgba(200,151,58,.15);
+    background:#fff;
+  }
+  .field input[readonly] { opacity:.6; cursor:not-allowed; }
+
+  .save-btn { width:100%; padding:.8rem; font-size:.92rem; margin-top:.5rem; }
+
+  /* ── STATS ROW ──────────────────── */
+  .stats-row {
+    display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-bottom:1.5rem;
+  }
+  .stat-card {
+    background:#fff; border-radius:1rem; padding:1.5rem;
+    text-align:center; box-shadow:0 2px 12px var(--shadow);
+  }
+  .stat-card .num {
+    font-family:'Playfair Display',serif; font-size:2rem; font-weight:700; color:var(--ink);
+  }
+  .stat-card .lbl { font-size:.75rem; color:#888; margin-top:.2rem; }
+
+  /* ── SECURITY CARD ──────────────── */
+  .security-item {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:.9rem 0; border-bottom:1px solid var(--cream);
+  }
+  .security-item:last-child { border-bottom:none; }
+  .security-item .left { display:flex; align-items:center; gap:.8rem; }
+  .security-icon {
+    width:38px; height:38px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center; font-size:1.1rem;
+    background:var(--cream);
+  }
+  .security-label { font-weight:600; font-size:.88rem; }
+  .security-desc  { font-size:.78rem; color:#888; margin-top:.15rem; }
+  .sec-btn {
+    font-size:.78rem; padding:.35rem .8rem; border-radius:.5rem;
+    background:var(--cream); border:none; cursor:pointer; font-weight:500;
+    transition:background .2s;
+  }
+  .sec-btn:hover { background:var(--mist); }
+
+  @media (max-width:700px) {
+    .profile-header { flex-direction:column; align-items:flex-start; }
+    .profile-meta   { margin-left:0; text-align:left; }
+    .profile-grid   { grid-template-columns:1fr; }
+    .stats-row      { grid-template-columns:1fr 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+
+  <!-- HEADER -->
+  <div class="profile-header">
+    <div class="avatar">{{ user.username|first|upper }}</div>
+    <div class="profile-info">
+      <h1>{{ user.full_name|default:user.username }}</h1>
+      <div class="email">{{ user.email }}</div>
+      <span class="badge badge-gold">⭐ Member</span>
+      {% if user.is_verified %}
+      <span class="badge badge-green" style="margin-left:.4rem;">✓ Verified</span>
+      {% else %}
+      <span class="badge badge-grey" style="margin-left:.4rem;">⏳ Unverified</span>
+      {% endif %}
+    </div>
+    <div class="profile-meta">
+      <div>ID: <strong>#{{ user.id }}</strong></div>
+      <div>Joined: <strong>{{ user.date_joined|date:"M Y" }}</strong></div>
+      {% if user.last_login %}
+      <div>Last login: <strong>{{ user.last_login|date:"d M Y" }}</strong></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="num">0</div>
+      <div class="lbl">Books Purchased</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">0</div>
+      <div class="lbl">Reading List</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">0</div>
+      <div class="lbl">Reviews Written</div>
+    </div>
+  </div>
+
+  <!-- EDIT / SECURITY GRID -->
+  <div class="profile-grid">
+
+    <!-- EDIT PROFILE -->
+    <div class="card">
+      <div class="card-title">✏️ Edit Profile</div>
+      <form method="POST" action="/profile/">
+        {% csrf_token %}
+        <div class="field">
+          <label>Email</label>
+          <input type="email" value="{{ user.email }}" readonly>
+        </div>
+        <div class="field">
+          <label>Username</label>
+          <input type="text" value="{{ user.username }}" readonly>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;">
+          <div class="field">
+            <label>First Name</label>
+            <input type="text" name="first_name" value="{{ user.first_name|default:'' }}" placeholder="Jane">
+          </div>
+          <div class="field">
+            <label>Last Name</label>
+            <input type="text" name="last_name" value="{{ user.last_name|default:'' }}" placeholder="Doe">
+          </div>
+        </div>
+        <div class="field">
+          <label>Phone</label>
+          <input type="tel" name="phone" value="{{ user.phone|default:'' }}" placeholder="+84 xxx xxx xxx">
+        </div>
+        <div class="field">
+          <label>Bio</label>
+          <textarea name="bio" rows="3" placeholder="Tell us about your reading tastes...">{{ user.bio|default:'' }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-gold save-btn">Save Changes</button>
+      </form>
+    </div>
+
+    <!-- SECURITY -->
+    <div class="card">
+      <div class="card-title">🔒 Security</div>
+
+      <div class="security-item">
+        <div class="left">
+          <div class="security-icon">🔑</div>
+          <div>
+            <div class="security-label">Password</div>
+            <div class="security-desc">Last changed: unknown</div>
+          </div>
+        </div>
+        <a href="#" class="sec-btn">Change</a>
+      </div>
+
+      <div class="security-item">
+        <div class="left">
+          <div class="security-icon">📧</div>
+          <div>
+            <div class="security-label">Email Verification</div>
+            <div class="security-desc">
+              {% if user.is_verified %}Email verified{% else %}Not yet verified{% endif %}
+            </div>
+          </div>
+        </div>
+        {% if not user.is_verified %}
+        <button class="sec-btn">Verify</button>
+        {% else %}
+        <span class="badge badge-green">✓</span>
+        {% endif %}
+      </div>
+
+      <div class="security-item">
+        <div class="left">
+          <div class="security-icon">📱</div>
+          <div>
+            <div class="security-label">Two-Factor Auth</div>
+            <div class="security-desc">Add extra protection</div>
+          </div>
+        </div>
+        <button class="sec-btn">Enable</button>
+      </div>
+
+      <div class="security-item">
+        <div class="left">
+          <div class="security-icon">🌐</div>
+          <div>
+            <div class="security-label">Active Sessions</div>
+            <div class="security-desc">Manage where you're signed in</div>
+          </div>
+        </div>
+        <button class="sec-btn">View</button>
+      </div>
+
+      <div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--cream);">
+        <a href="/logout/" class="btn btn-outline" style="width:100%; justify-content:center; color:var(--rust); border-color:#fecaca;">
+          Sign Out of All Devices
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}BookVerse{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:       #0d0d0d;
+      --paper:     #faf8f3;
+      --cream:     #f2ede3;
+      --gold:      #c8973a;
+      --gold-lt:   #e8c56a;
+      --rust:      #b84c2b;
+      --sage:      #4a6b5b;
+      --mist:      #d8d2c5;
+      --shadow:    rgba(13,13,13,.12);
+      --r:         .75rem;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ───────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .9rem 2.5rem;
+      background: rgba(250,248,243,.88);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--mist);
+    }
+
+    .nav-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem; font-weight: 900; letter-spacing: -.02em;
+      color: var(--ink); text-decoration: none;
+      display: flex; align-items: center; gap: .4rem;
+    }
+    .nav-logo span { color: var(--gold); }
+
+    .nav-links { display: flex; align-items: center; gap: 1.8rem; }
+    .nav-links a {
+      font-size: .88rem; font-weight: 500; letter-spacing: .03em;
+      color: var(--ink); text-decoration: none; opacity: .7;
+      transition: opacity .2s;
+    }
+    .nav-links a:hover { opacity: 1; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+      padding: .6rem 1.4rem; border-radius: var(--r);
+      font-family: 'DM Sans', sans-serif; font-size: .88rem; font-weight: 600;
+      cursor: pointer; border: none; text-decoration: none;
+      transition: transform .18s, box-shadow .18s, background .18s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-gold {
+      background: var(--gold); color: #fff;
+      box-shadow: 0 4px 14px rgba(200,151,58,.35);
+    }
+    .btn-gold:hover { background: #b8872a; box-shadow: 0 6px 20px rgba(200,151,58,.45); transform: translateY(-1px); }
+    .btn-outline {
+      background: transparent; color: var(--ink);
+      border: 1.5px solid var(--mist);
+    }
+    .btn-outline:hover { border-color: var(--ink); background: var(--cream); }
+
+    /* ── TOAST MESSAGES ────────────────────────── */
+    .messages-wrap {
+      position: fixed; top: 5.5rem; right: 1.5rem; z-index: 200;
+      display: flex; flex-direction: column; gap: .5rem;
+    }
+    .toast {
+      padding: .8rem 1.2rem; border-radius: var(--r);
+      font-size: .86rem; font-weight: 500;
+      background: var(--ink); color: var(--paper);
+      box-shadow: 0 8px 24px var(--shadow);
+      animation: slideIn .35s cubic-bezier(.22,1,.36,1) forwards,
+                 fadeOut .4s ease 3.5s forwards;
+    }
+    .toast.success { background: var(--sage); }
+    .toast.error   { background: var(--rust); }
+    .toast.info    { background: #4a5568; }
+
+    @keyframes slideIn { from { opacity:0; transform:translateX(60px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes fadeOut { from { opacity:1; } to { opacity:0; pointer-events:none; } }
+
+    /* ── MAIN ──────────────────────────────────── */
+    main { padding-top: 4.5rem; }
+
+    /* ── FOOTER ────────────────────────────────── */
+    footer {
+      margin-top: 6rem; padding: 2rem 2.5rem;
+      border-top: 1px solid var(--mist);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: .8rem; color: #888;
+    }
+    footer a { color: var(--gold); text-decoration: none; }
+
+    /* ── SCROLL BAR ────────────────────────────── */
+    ::-webkit-scrollbar { width: 7px; }
+    ::-webkit-scrollbar-track { background: var(--cream); }
+    ::-webkit-scrollbar-thumb { background: var(--mist); border-radius: 4px; }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">📖 Book<span>Verse</span></a>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="#">Catalogue</a>
+    <a href="#">Authors</a>
+    {% if request.session.access_token %}
+      <a href="/profile/">{{ request.session.user.username }}</a>
+      <a href="/logout/" class="btn btn-outline" style="padding:.45rem 1rem;">Logout</a>
+    {% else %}
+      <a href="/login/">Sign in</a>
+      <a href="/register/" class="btn btn-gold">Join Free</a>
+    {% endif %}
+  </div>
+</nav>
+
+{% if messages %}
+<div class="messages-wrap">
+  {% for msg in messages %}
+    <div class="toast {{ msg.tags }}">{{ msg }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<main>{% block content %}{% endblock %}</main>
+
+<footer>
+  <span>© 2024 <strong>BookVerse</strong>. All rights reserved.</span>
+  <span>Built with Django Microservices · <a href="#">API Docs</a></span>
+</footer>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

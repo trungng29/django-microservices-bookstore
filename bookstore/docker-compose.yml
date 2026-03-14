@@ -1,0 +1,92 @@
+version: '3.9'
+
+services:
+  auth_db:
+    image: postgres:15-alpine
+    container_name: bookstore_auth_db
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: auth_user
+      POSTGRES_PASSWORD: auth_pass_2024
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+    networks:
+      - bookstore_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auth_user -d auth_db"]
+      interval: 3s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
+
+  redis:
+    image: redis:7-alpine
+    container_name: bookstore_redis
+    networks:
+      - bookstore_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  auth_service:
+    build:
+      context: ./services/auth_service
+      dockerfile: Dockerfile
+    container_name: bookstore_auth_service
+    environment:
+      DEBUG: "True"
+      SECRET_KEY: "super-secret-bookstore-key-2024"
+      DB_NAME: auth_db
+      DB_USER: auth_user
+      DB_PASSWORD: auth_pass_2024
+      DB_HOST: auth_db
+      DB_PORT: "5432"
+      REDIS_URL: "redis://redis:6379/0"
+      ALLOWED_HOSTS: "localhost,127.0.0.1,auth_service,nginx,0.0.0.0"
+    depends_on:
+      auth_db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - bookstore_network
+    restart: on-failure
+
+  frontend_service:
+    build:
+      context: ./services/frontend_service
+      dockerfile: Dockerfile
+    container_name: bookstore_frontend_service
+    environment:
+      DEBUG: "True"
+      SECRET_KEY: "frontend-secret-key-2024"
+      AUTH_SERVICE_URL: "http://auth_service:8001"
+      ALLOWED_HOSTS: "localhost,127.0.0.1,frontend_service,nginx,0.0.0.0"
+    depends_on:
+      - auth_service
+    networks:
+      - bookstore_network
+    restart: on-failure
+
+  nginx:
+    image: nginx:alpine
+    container_name: bookstore_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - auth_service
+      - frontend_service
+    networks:
+      - bookstore_network
+    restart: unless-stopped
+
+networks:
+  bookstore_network:
+    driver: bridge
+
+volumes:
+  auth_db_data:

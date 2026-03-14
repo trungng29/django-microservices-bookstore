@@ -1,0 +1,375 @@
+{% extends 'base.html' %}
+{% block title %}BookVerse — Discover Your Next Chapter{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── HERO ──────────────────────────────────────────── */
+  .hero {
+    min-height: 92vh;
+    display: grid; grid-template-columns: 1fr 1fr;
+    align-items: center; gap: 4rem;
+    padding: 4rem 6rem 4rem 6rem;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 70% 60% at 80% 40%, #e8c56a22, transparent),
+                radial-gradient(ellipse 50% 70% at 10% 80%, #4a6b5b18, transparent);
+    pointer-events: none;
+  }
+
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: .5rem;
+    font-size: .78rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 1.2rem;
+  }
+  .hero-eyebrow::before {
+    content: ''; display: block; width: 2rem; height: 1.5px; background: var(--gold);
+  }
+
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.8rem, 5vw, 4.2rem);
+    font-weight: 900; line-height: 1.08;
+    letter-spacing: -.03em;
+    margin-bottom: 1.4rem;
+  }
+  .hero h1 em {
+    font-style: italic; color: var(--gold);
+    display: block;
+  }
+
+  .hero-sub {
+    font-size: 1.05rem; line-height: 1.7; color: #555;
+    max-width: 42ch; margin-bottom: 2.4rem;
+  }
+
+  .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .hero-actions .btn { padding: .85rem 2rem; font-size: .95rem; }
+
+  .hero-stats {
+    display: flex; gap: 2.5rem; margin-top: 3.5rem;
+    padding-top: 2rem; border-top: 1px solid var(--mist);
+  }
+  .stat-item strong {
+    display: block;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.9rem; font-weight: 700; color: var(--ink);
+  }
+  .stat-item span { font-size: .8rem; color: #888; letter-spacing: .04em; }
+
+  /* ── BOOK STACK VISUAL ─────────────────────────────── */
+  .hero-visual {
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .book-stack {
+    position: relative; width: 320px; height: 400px;
+    animation: float 5s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0) rotate(-2deg); }
+    50%      { transform: translateY(-18px) rotate(2deg); }
+  }
+
+  .book {
+    position: absolute; border-radius: 6px 12px 12px 6px;
+    box-shadow: -4px 6px 20px rgba(0,0,0,.22), inset -2px 0 4px rgba(0,0,0,.1);
+  }
+  .book-1 { width:180px;height:240px; background:linear-gradient(135deg,#c8973a,#e8c56a); top:60px;left:70px; transform:rotate(-5deg); }
+  .book-2 { width:160px;height:220px; background:linear-gradient(135deg,#4a6b5b,#6a9b80); top:90px;left:100px; transform:rotate(4deg); }
+  .book-3 { width:170px;height:230px; background:linear-gradient(135deg,#b84c2b,#d46e4a); top:75px;left:85px; transform:rotate(-1deg); }
+  .book-spine {
+    position:absolute; left:0; top:0; bottom:0; width:12px;
+    background:rgba(0,0,0,.25); border-radius:6px 0 0 6px;
+  }
+  .book-title {
+    position:absolute; bottom:1.5rem; left:1rem; right:.5rem;
+    font-family:'Playfair Display',serif; font-size:.75rem; font-weight:700;
+    color:rgba(255,255,255,.9); line-height:1.3;
+  }
+
+  /* ── FEATURED SECTION ──────────────────────────────── */
+  .section {
+    padding: 5rem 6rem;
+  }
+  .section-header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 3rem;
+  }
+  .section-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem; font-weight: 700;
+  }
+  .section-header a {
+    font-size: .86rem; font-weight: 500; color: var(--gold); text-decoration: none;
+    letter-spacing: .04em;
+  }
+  .section-header a:hover { text-decoration: underline; }
+
+  .books-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.8rem;
+  }
+
+  .book-card {
+    background: #fff; border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 2px 12px var(--shadow);
+    transition: transform .28s cubic-bezier(.22,1,.36,1), box-shadow .28s;
+    cursor: pointer;
+  }
+  .book-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 16px 40px rgba(0,0,0,.14);
+  }
+  .book-card-cover {
+    height: 200px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3.5rem;
+    position: relative; overflow: hidden;
+  }
+  .book-card-cover::after {
+    content:''; position:absolute; inset:0;
+    background: linear-gradient(to top, rgba(0,0,0,.3), transparent);
+  }
+  .book-card-body { padding: 1rem 1.1rem 1.3rem; }
+  .book-card-genre {
+    font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: .3rem;
+  }
+  .book-card-title {
+    font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700;
+    line-height: 1.3; margin-bottom: .25rem;
+  }
+  .book-card-author { font-size: .8rem; color: #888; margin-bottom: .6rem; }
+  .book-card-price {
+    font-size: .95rem; font-weight: 700; color: var(--ink);
+  }
+  .book-card-price .old {
+    font-size: .78rem; color: #bbb; text-decoration: line-through; margin-left: .4rem; font-weight: 400;
+  }
+
+  /* ── BANNER ──────────────────────────────────────────── */
+  .promo-banner {
+    margin: 0 6rem 5rem;
+    background: linear-gradient(120deg, var(--ink) 0%, #2d2d2d 100%);
+    border-radius: 1.5rem; padding: 3.5rem 4rem;
+    display: flex; align-items: center; justify-content: space-between;
+    overflow: hidden; position: relative;
+  }
+  .promo-banner::before {
+    content:''; position:absolute; right:-60px; top:-60px;
+    width:340px; height:340px; border-radius:50%;
+    background: radial-gradient(circle, rgba(200,151,58,.3), transparent 70%);
+  }
+  .promo-banner h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem; font-weight: 700; color: #fff; margin-bottom: .5rem;
+  }
+  .promo-banner p { color: #aaa; font-size: .95rem; }
+  .promo-badge {
+    background: var(--gold); color: #fff;
+    padding: 1rem 2rem; border-radius: .75rem;
+    font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 900;
+    white-space: nowrap;
+  }
+  .promo-badge small { display:block; font-family:'DM Sans',sans-serif; font-size:.75rem; font-weight:400; opacity:.8; }
+
+  /* ── AUTH CTA (logged-out) ─────────────────────────── */
+  .auth-cta {
+    margin: 0 6rem 5rem;
+    background: linear-gradient(135deg, var(--cream), #fff);
+    border: 1px solid var(--mist); border-radius: 1.5rem;
+    padding: 3rem 4rem; text-align: center;
+  }
+  .auth-cta h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem; margin-bottom: .8rem;
+  }
+  .auth-cta p { color: #666; margin-bottom: 1.8rem; }
+  .auth-cta .actions { display:flex; gap:1rem; justify-content:center; }
+
+  /* ── WELCOME BACK (logged-in) ──────────────────────── */
+  .welcome-bar {
+    margin: 0 6rem 3rem;
+    background: linear-gradient(135deg, var(--sage), #3d5a4a);
+    border-radius: 1.2rem; padding: 2rem 2.5rem;
+    display: flex; align-items: center; justify-content: space-between; color: #fff;
+  }
+  .welcome-bar h3 {
+    font-family: 'Playfair Display', serif; font-size: 1.4rem; margin-bottom: .25rem;
+  }
+  .welcome-bar p { font-size: .88rem; opacity: .8; }
+
+  @media (max-width: 900px) {
+    .hero { grid-template-columns:1fr; padding:3rem 2rem; }
+    .hero-visual { display:none; }
+    .section { padding:3rem 2rem; }
+    .books-grid { grid-template-columns:repeat(2,1fr); }
+    .promo-banner, .auth-cta, .welcome-bar { margin:0 2rem 3rem; padding:2rem; }
+    .section-header { flex-direction:column; align-items:flex-start; gap:.5rem; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-text" data-animate>
+    <div class="hero-eyebrow">Your Literary Universe</div>
+    <h1>
+      Every Story<br>
+      Deserves a<br>
+      <em>Great Reader.</em>
+    </h1>
+    <p class="hero-sub">
+      Discover 50,000+ curated titles across every genre.
+      From timeless classics to tomorrow's bestsellers —
+      your next obsession is waiting.
+    </p>
+    <div class="hero-actions">
+      {% if user %}
+        <a href="#featured" class="btn btn-gold">Browse Books</a>
+        <a href="/profile/" class="btn btn-outline">My Profile</a>
+      {% else %}
+        <a href="/register/" class="btn btn-gold">Start Reading Free</a>
+        <a href="/login/" class="btn btn-outline">Sign In</a>
+      {% endif %}
+    </div>
+    <div class="hero-stats">
+      <div class="stat-item"><strong>50K+</strong><span>TITLES</span></div>
+      <div class="stat-item"><strong>12K</strong><span>AUTHORS</span></div>
+      <div class="stat-item"><strong>4.9★</strong><span>RATING</span></div>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <div class="book-stack">
+      <div class="book book-1"><div class="book-spine"></div><div class="book-title">The Great Gatsby</div></div>
+      <div class="book book-2"><div class="book-spine"></div><div class="book-title">One Hundred Years of Solitude</div></div>
+      <div class="book book-3"><div class="book-spine"></div><div class="book-title">Crime & Punishment</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- WELCOME / AUTH CTA -->
+{% if user %}
+<div class="welcome-bar">
+  <div>
+    <h3>Welcome back, {{ user.username }}! 📚</h3>
+    <p>You have 3 books in your reading list. Keep going!</p>
+  </div>
+  <a href="/profile/" class="btn btn-gold" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);">View Profile →</a>
+</div>
+{% else %}
+<div class="auth-cta">
+  <h3>Join 200,000 passionate readers</h3>
+  <p>Create your free account to save favourites, get personalised recommendations, and unlock member-only discounts.</p>
+  <div class="actions">
+    <a href="/register/" class="btn btn-gold">Create Free Account</a>
+    <a href="/login/" class="btn btn-outline">I Already Have an Account</a>
+  </div>
+</div>
+{% endif %}
+
+<!-- FEATURED BOOKS -->
+<section class="section" id="featured">
+  <div class="section-header">
+    <h2>Featured This Week</h2>
+    <a href="#">View all →</a>
+  </div>
+  <div class="books-grid">
+    {% for book in books_data %}
+    <div class="book-card">
+      <div class="book-card-cover" style="background:{{ book.color }};">{{ book.emoji }}</div>
+      <div class="book-card-body">
+        <div class="book-card-genre">{{ book.genre }}</div>
+        <div class="book-card-title">{{ book.title }}</div>
+        <div class="book-card-author">{{ book.author }}</div>
+        <div class="book-card-price">${{ book.price }}<span class="old">${{ book.old_price }}</span></div>
+      </div>
+    </div>
+    {% empty %}
+    <!-- Fallback static cards -->
+    <div class="book-card">
+      <div class="book-card-cover" style="background:linear-gradient(135deg,#c8973a,#e8c56a);">📖</div>
+      <div class="book-card-body">
+        <div class="book-card-genre">Fiction</div>
+        <div class="book-card-title">The Midnight Library</div>
+        <div class="book-card-author">Matt Haig</div>
+        <div class="book-card-price">$14.99 <span class="old">$22.00</span></div>
+      </div>
+    </div>
+    <div class="book-card">
+      <div class="book-card-cover" style="background:linear-gradient(135deg,#4a6b5b,#6a9b80);">🌿</div>
+      <div class="book-card-body">
+        <div class="book-card-genre">Non-Fiction</div>
+        <div class="book-card-title">Atomic Habits</div>
+        <div class="book-card-author">James Clear</div>
+        <div class="book-card-price">$16.99 <span class="old">$24.00</span></div>
+      </div>
+    </div>
+    <div class="book-card">
+      <div class="book-card-cover" style="background:linear-gradient(135deg,#b84c2b,#d46e4a);">🔥</div>
+      <div class="book-card-body">
+        <div class="book-card-genre">Thriller</div>
+        <div class="book-card-title">The Silent Patient</div>
+        <div class="book-card-author">Alex Michaelides</div>
+        <div class="book-card-price">$12.99 <span class="old">$19.00</span></div>
+      </div>
+    </div>
+    <div class="book-card">
+      <div class="book-card-cover" style="background:linear-gradient(135deg,#5a4a8b,#8a70b8);">✨</div>
+      <div class="book-card-body">
+        <div class="book-card-genre">Fantasy</div>
+        <div class="book-card-title">The Name of the Wind</div>
+        <div class="book-card-author">Patrick Rothfuss</div>
+        <div class="book-card-price">$18.99 <span class="old">$28.00</span></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- PROMO BANNER -->
+<div class="promo-banner">
+  <div>
+    <h3>Summer Reading Sale 🌞</h3>
+    <p>Stock up on your reading list. Limited time offer — ends Sunday.</p>
+    <a href="#" class="btn btn-gold" style="margin-top:1.4rem;">Shop the Sale →</a>
+  </div>
+  <div class="promo-badge">
+    UP TO<br>40% OFF
+    <small>on 5,000+ titles</small>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Staggered entrance animation
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.animation = 'fadeUp .6s cubic-bezier(.22,1,.36,1) forwards';
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: .15 });
+
+  document.querySelectorAll('.book-card, [data-animate]').forEach((el, i) => {
+    el.style.opacity = '0';
+    el.style.animationDelay = `${i * 0.08}s`;
+    observer.observe(el);
+  });
+</script>
+<style>
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(30px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+</style>
+{% endblock %}
